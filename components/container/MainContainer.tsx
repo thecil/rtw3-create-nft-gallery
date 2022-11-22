@@ -5,7 +5,7 @@ type MyComponentProps = React.PropsWithChildren<{}>;
 
 export default function MainContainer({ children }: MyComponentProps) {
   return (
-    <Container>
+    <Container fluid>
       <Row>
         <Col sm={8} className="flex space-x-2">
           <video autoPlay loop muted className="w-16 m-4 rounded">

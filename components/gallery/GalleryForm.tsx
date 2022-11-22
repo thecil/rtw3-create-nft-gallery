@@ -2,6 +2,7 @@ import { Form, Row, Col, InputGroup, Button, Spinner } from "react-bootstrap";
 import { useAccount } from "wagmi";
 import { useMemo, useState } from "react";
 import NFTCard from "../NFTCard";
+import PaginationBar from "./PaginationBar";
 import { OwnedNfts } from "../NFTCard";
 
 const GalleryForm: React.FC = () => {
@@ -57,24 +58,30 @@ const GalleryForm: React.FC = () => {
     startToken = "",
     pageIndex = 0
   ) => {
-    if (collection.length) {
-      setFetching(true);
+    if (collection) {
+      const baseURL = `https://eth-mainnet.alchemyapi.io/v2/${api_key}/getNFTsForCollection/`;
+      const fetchURL = `${baseURL}?contractAddress=${collection}&withMetadata=true&startToken=${startToken}`;
+
       try {
-        var requestOptions = {
+        const nfts = await fetch(fetchURL, {
           method: "GET",
-        };
-        const fetchURL = `${baseURL}?contractAddress=${collection}&withMetadata=true&startToken=${startToken}`;
-        const nfts = await fetch(fetchURL, requestOptions).then((data) =>
-          data.json()
-        );
+        }).then((data) => data.json());
+
         if (nfts) {
-          console.log("fetchNFTsForCollection:", nfts);
+          if (nfts.nextToken) {
+            setPageKeys((prevKeys) => {
+              const newKeys = [...prevKeys];
+              newKeys[pageIndex + 1] = nfts.nextToken;
+
+              return newKeys;
+            });
+          }
           setNFTs(nfts.nfts);
           setFetching(false);
         }
       } catch (error) {
+        console.log(error);
         setFetching(false);
-        console.log("fetchNFTsForCollection Error:", error);
       }
     }
   };
@@ -99,11 +106,11 @@ const GalleryForm: React.FC = () => {
   const nftsContent = useMemo(() => {
     if (NFTs.length >= 1) {
       return (
-        <>
-          {NFTs.map((nft, index) => {
-            return <NFTCard nft={nft} index={index} />;
+        <div className="grid grid-cols-3 gap-2 mt-6">
+          {NFTs.map((nft, i) => {
+            return <NFTCard nft={nft} key={i} />;
           })}
-        </>
+        </div>
       );
     } else {
       return <></>;
@@ -116,11 +123,11 @@ const GalleryForm: React.FC = () => {
         <Col md={6} className="my-4">
           <Form onSubmit={onSearchClicked}>
             <Row>
-              <Col>
+              <Col className="rounded p-2 w-full border-2 border-slate-600">
                 {isFetching ? (
                   <Spinner animation="border" variant="light" />
                 ) : (
-                  <fieldset className="flex space-x-2 items-center border border-slate-700 rounded p-2">
+                  <fieldset className="flex space-x-2 items-center">
                     <Form.Check
                       className="text-white space-x-2"
                       type="switch"
@@ -129,14 +136,14 @@ const GalleryForm: React.FC = () => {
                         setFetchForCollection(target.checked)
                       }
                     />
-                    <InputGroup className="gap-2" size="sm">
+                    <InputGroup className="gap-2 " size="sm">
                       {fetchForCollection ? (
                         <>
                           <Form.Text className="text-white">
                             Collection:
                           </Form.Text>
                           <Form.Control
-                            className="rounded bg-slate-300"
+                            className="rounded"
                             name="collection"
                             type="text"
                             value={collection}
@@ -152,7 +159,7 @@ const GalleryForm: React.FC = () => {
                             Wallet/ENS:
                           </Form.Text>
                           <Form.Control
-                            className="rounded bg-slate-300"
+                            className="rounded"
                             name="wallet"
                             type="text"
                             value={wallet}
@@ -168,7 +175,7 @@ const GalleryForm: React.FC = () => {
                         type="submit"
                         variant="success"
                         size="sm"
-                        className="w-18"
+                        className="w-max rounded"
                       >
                         Lets Go!
                       </Button>
@@ -177,7 +184,7 @@ const GalleryForm: React.FC = () => {
                         type="submit"
                         variant="success"
                         size="sm"
-                        className="w-18"
+                        className="w-max rounded"
                         onClick={() => setWalletAddress(address as string)}
                       >
                         My Gallery
@@ -191,7 +198,23 @@ const GalleryForm: React.FC = () => {
         </Col>
       </Row>
 
-      <>{nftsContent}</>
+      <>
+        {pageKeys.length > 1 && (
+          <PaginationBar
+            currentPage={currentPage}
+            pageKeys={pageKeys}
+            onClickPage={onClickPage}
+          />
+        )}
+        {nftsContent}{" "}
+        {pageKeys.length > 1 && (
+          <PaginationBar
+            currentPage={currentPage}
+            pageKeys={pageKeys}
+            onClickPage={onClickPage}
+          />
+        )}
+      </>
     </>
   );
 };

@@ -24,7 +24,7 @@ export const SocialMedia: React.FC = () => {
 
   return (
     <div className="mt-3 flex flex-col">
-      <h3>Follow Me:</h3>
+      <h3 className="text-white">Follow Me:</h3>
       <div className="flex space-x-1 items-center">
         {followSocials.map((item: any, i: any) => (
           <Link href={item.LinkHref} key={i}>
